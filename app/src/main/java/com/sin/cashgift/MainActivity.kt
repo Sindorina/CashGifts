@@ -61,12 +61,12 @@ class MainActivity : AppCompatActivity() {
     private fun initData() {
         if (hasAfterInitCalled) return
         hasAfterInitCalled = true
-        binding.btn.setOnClickListener {
-            val intent = Intent(Intent.ACTION_GET_CONTENT)
-            intent.type = "*/*"//无类型限制
-            intent.addCategory(Intent.CATEGORY_OPENABLE)
-            startActivityForResult(intent, 1000)
-        }
+//        binding.btn.setOnClickListener {
+//            val intent = Intent(Intent.ACTION_GET_CONTENT)
+//            intent.type = "*/*"//无类型限制
+//            intent.addCategory(Intent.CATEGORY_OPENABLE)
+//            startActivityForResult(intent, 1000)
+//        }
     }
 
     private var path = ""
