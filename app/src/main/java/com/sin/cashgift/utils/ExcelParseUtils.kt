@@ -1,7 +1,9 @@
 package com.sin.cashgift.utils
 
 import android.os.Environment
-import com.sin.cashgift.data.TrainDataBeanGuiYang
+import com.sin.cashgift.App
+import com.sin.cashgift.data.CashBean
+import com.sin.cashgift.data.CashDatabase
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -13,25 +15,20 @@ import java.util.*
 
 object ExcelParseUtils {
     private val XLS_EXCEL_FILE_PATH =
-        Environment.getExternalStorageDirectory().absolutePath + File.separator + "/show.xls"
+        Environment.getExternalStorageDirectory().absolutePath + File.separator + "/lj.xls"
     private val XLSX_EXCEL_FILE_PATH =
-        Environment.getExternalStorageDirectory().absolutePath + File.separator + "/show.xlsx"
-//    private val columns = listOf("序号", "车次","站台", "运行区段", "开检时间", "停检时间", "开点", "待车", "检票口")
-//    private val propertyNames = listOf(
-//        "number", "trainName","stationName",
-//        "operationLine", "startCheckTime", "stopCheckTime", "launchTime", "waitColor", "checkPort"
-//    )
+        Environment.getExternalStorageDirectory().absolutePath + File.separator + "/lj.xlsx"
 
-    private val columns = listOf("序号", "车次","站台", "运行区段","待车")
+    private val columns = listOf("姓名", "礼金")
     private val propertyNames = listOf(
-        "number", "trainName","stationName",
-        "operationLine", "waitColor")
-    fun readExcel(): MutableList<TrainDataBeanGuiYang>? {
+        "name", "money")
+    private var id = 0L
+    fun readExcel(): List<CashBean>? {
         LogUtil.logE("TAG","本地解析list")
         var sheet: Sheet? = null
         var row: Row? = null
         var rowHeader: Row? = null
-        var list: MutableList<TrainDataBeanGuiYang>? = null
+        var list: MutableList<CashBean>? = null
         var cellData = ""
         var wb: Workbook? = null
         val xlsFile = File(XLS_EXCEL_FILE_PATH)
@@ -50,7 +47,10 @@ object ExcelParseUtils {
             ?: return null
         var inputStream: InputStream? = null
         try {
-            inputStream = FileInputStream(excelFile)
+            val xlsInputStream = getAssetInputStream()
+            val xlsxInputStream = getAssetInputStream(false)
+            inputStream = xlsInputStream
+                ?: (xlsxInputStream ?: FileInputStream(excelFile))
             wb = when {
                 excelFile.absolutePath.endsWith(".xls") -> {
                     HSSFWorkbook(inputStream)
@@ -87,7 +87,7 @@ object ExcelParseUtils {
                 } else {
                     break
                 }
-                val trainDataBean = TrainDataBeanGuiYang()
+                val trainDataBean = CashBean(id)
                 convertMapToBean(trainDataBean, map)
                 list.add(trainDataBean)
             }
@@ -105,6 +105,18 @@ object ExcelParseUtils {
             simpleDateFormat = SimpleDateFormat(pattern, Locale.CHINA)
         }
         return simpleDateFormat!!
+    }
+
+    private fun getAssetInputStream(isGetXls:Boolean = true):InputStream?{
+        return try {
+            if (isGetXls){
+                App.mContext.assets.open("lj.xls")
+            }else{
+                App.mContext.assets.open("lj.xlsx")
+            }
+        }catch (e:Exception){
+            null
+        }
     }
 
     private fun getCellFormatValue(cell: Cell?): String {
@@ -142,28 +154,30 @@ object ExcelParseUtils {
         }
     }
 
-    private fun convertMapToBean(trainDataBean: TrainDataBeanGuiYang, map: Map<String, String>) {
-        val cls = trainDataBean.javaClass
+    private fun convertMapToBean(cashBean: CashBean, map: Map<String, String>) {
+        val cls = cashBean.javaClass
         val entries = map.entries
         propertyNames.forEach { propertyName ->
             entries.forEach en@{
                 if (propertyName == it.key) {
-                    setFieldValue(cls, propertyName, trainDataBean, it.value)
+                    setFieldValue(cls, propertyName, cashBean, it.value)
                     return@en
                 }
             }
         }
-        //AppDatabase.instance.getDao().saveTrainData(trainDataBean)
+        CashDatabase.getInstance(App.mContext).cashDao().saveCash(cashBean)
+        LogUtil.logE("TAG","saveBean: $cashBean")
+        id++
     }
 
     private fun setFieldValue(
-        cls: Class<TrainDataBeanGuiYang>,
+        cls: Class<CashBean>,
         propertyName: String,
-        trainDataBean: TrainDataBeanGuiYang,
+        cashBean: CashBean,
         value: String
     ) {
         val field = cls.getDeclaredField(propertyName)
         field.isAccessible = true
-        field.set(trainDataBean, value)
+        field.set(cashBean, value)
     }
 }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@android:color/holo_blue_bright">
+    <item>
+        <selector>
+            <!-- 未点击背景图-->
+            <item
+                android:drawable="@drawable/btn_normal"
+                android:state_pressed="false" />
+            <!-- 点击背景图-->
+            <item
+                android:drawable="@drawable/btn_click"
+                android:state_pressed="true" />
+        </selector>
+    </item>
+</ripple>
